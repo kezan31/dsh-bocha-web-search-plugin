@@ -1,0 +1,17 @@
+# Production bundle patch: replace DeepSeek search selection with Bocha.
+- id: web
+  config:
+    searchProvider: bocha
+
+- id: web-search-deepseek
+  disabled: true
+
+- insert:
+    - id: web-search-bocha
+      name: dsh-web-search-bocha
+      config:
+        apiKeyEnv: BOCHA_API_KEY
+        baseURL: https://api.bochaai.com/v1/web-search
+        freshness: noLimit
+        count: 10
+        timeoutMs: 15000

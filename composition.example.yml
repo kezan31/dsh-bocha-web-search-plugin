@@ -1,0 +1,25 @@
+# Production composition example.
+# Apply this in a copied/local composition, not by editing the shipped install.
+# Replace the shipped DeepSeek web provider row when selecting Bocha.
+
+- id: web
+  name: '@deepseek-ai/dsh-web'
+  config:
+    searchProvider: bocha
+
+- id: web-search-bocha
+  name: 'dsh-web-search-bocha'
+  config:
+    apiKeyEnv: BOCHA_API_KEY
+    baseURL: https://api.bochaai.com/v1/web-search
+    freshness: noLimit
+    count: 10
+    timeoutMs: 15000
+
+# Keep the provider-neutral model-facing tool. Its existing web result card
+# consumes the normalized WebSearchResult produced by this provider.
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: false
+    searchTimeoutMs: 60000

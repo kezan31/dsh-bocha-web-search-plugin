@@ -1,0 +1,14 @@
+{
+  "code": "200",
+  "msg": "success",
+  "data": {
+    "webPages": {
+      "totalEstimatedMatches": 3,
+      "value": [
+        {"name":"Bocha Web Search API","url":"https://example.com/bocha-api","summary":"Example summary","datePublished":"2026-01-02"},
+        {"name":"Duplicate result","url":"https://example.com/bocha-api","snippet":"This duplicate must be removed"},
+        {"name":"Second result","url":"https://example.com/second","snippet":"Example snippet"}
+      ]
+    }
+  }
+}

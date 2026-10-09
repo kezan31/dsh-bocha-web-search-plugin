@@ -14,9 +14,19 @@ const BOCHA_HOSTS = new Set(["api.bochaai.com", "api.bocha.cn"]);
 
 export function isValidBaseURL(value) {
   if (typeof value !== "string" || value.trim().length === 0) return false;
+  const normalized = value.trim();
   try {
-    const parsed = new URL(value.trim());
-    return parsed.protocol === "https:" && BOCHA_HOSTS.has(parsed.hostname) && parsed.pathname.endsWith("/v1/web-search");
+    const parsed = new URL(normalized);
+    return value === normalized
+      && parsed.protocol === "https:"
+      && BOCHA_HOSTS.has(parsed.hostname)
+      && parsed.pathname === "/v1/web-search"
+      && parsed.port.length === 0
+      && parsed.username.length === 0
+      && parsed.password.length === 0
+      && parsed.search.length === 0
+      && parsed.hash.length === 0
+      && parsed.href === normalized;
   } catch (_error) {
     return false;
   }
@@ -41,7 +51,39 @@ function throwIfAborted(signal) {
 }
 
 function isAbortError(error) {
-  return error instanceof DOMException && error.name === "AbortError";
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function createRequestTimeout(signal, timeoutMs) {
+  const controller = new AbortController();
+  let timedOut = false;
+  const forwardAbort = () => controller.abort(signal.reason);
+
+  if (signal?.aborted) forwardAbort();
+  else signal?.addEventListener("abort", forwardAbort, { once: true });
+
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort(new Error(`Bocha search timed out after ${timeoutMs} ms`));
+  }, timeoutMs);
+
+  return {
+    signal: controller.signal,
+    timeoutMs,
+    didTimeout: () => timedOut,
+    dispose: () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", forwardAbort);
+    }
+  };
+}
+
+function throwRequestFailure(message, error, signal, timeout) {
+  if (signal?.aborted || isAbortError(error)) throw webFailure("Bocha search aborted", "WEB_ABORTED", error);
+  if (timeout.didTimeout()) {
+    throw webFailure(`Bocha search timed out after ${timeout.timeoutMs} ms`, "WEB_PROVIDER_TIMEOUT", error);
+  }
+  throw webFailure(`${message}: ${String(error)}`, "WEB_PROVIDER_ERROR", error);
 }
 
 function citationSource(item) {
@@ -95,6 +137,7 @@ export class BochaSearchProvider {
     const options = this.resolveOptions();
     return (options.apiKey?.length > 0 || options.resolveApiKey !== undefined)
       && isValidBaseURL(options.baseURL)
+      && isValidFreshness(options.freshness)
       && Number.isInteger(options.count)
       && options.count > 0
       && Number.isInteger(options.timeoutMs)
@@ -107,49 +150,60 @@ export class BochaSearchProvider {
     throwIfAborted(signal);
     const query = typeof request?.query === "string" ? request.query.trim() : "";
     if (query.length === 0) throw webFailure("Bocha search query must not be empty", "WEB_PROVIDER_ERROR");
-    const maxResults = request?.maxResults === undefined ? options.count : Math.min(options.count, Math.max(1, Math.trunc(request.maxResults)));
+    const requestedMaxResults = request?.maxResults;
+    const maxResults = requestedMaxResults === undefined || !Number.isFinite(requestedMaxResults)
+      ? options.count
+      : Math.min(options.count, Math.max(0, Math.trunc(requestedMaxResults)));
     const body = {
       query,
       summary: true,
       freshness: options.freshness,
-      count: Math.min(BOCHA_MAX_COUNT, maxResults)
+      count: Math.min(BOCHA_MAX_COUNT, Math.max(1, maxResults))
     };
-    let response;
+    const timeout = createRequestTimeout(signal, options.timeoutMs);
+
     try {
-      response = await fetch(options.baseURL, {
-        method: "POST",
-        redirect: "error",
-        headers: {
-          authorization: `Bearer ${apiKey}`,
-          "content-type": "application/json",
-          accept: "application/json",
-          "user-agent": "dsh-web-search-bocha/0.1.0"
-        },
-        body: JSON.stringify(body),
-        ...(signal === undefined ? {} : { signal })
-      });
-    } catch (error) {
-      if (signal?.aborted || isAbortError(error)) throw webFailure("Bocha search aborted", "WEB_ABORTED", error);
-      throw webFailure(`Bocha search request failed: ${String(error)}`, "WEB_PROVIDER_ERROR", error);
-    }
-    if (!response.ok) {
-      let detail = `Bocha API error (HTTP ${response.status})`;
+      let response;
       try {
-        const errorBody = await response.json();
-        detail = errorBody?.msg ?? errorBody?.message ?? errorBody?.error?.message ?? detail;
+        response = await fetch(options.baseURL, {
+          method: "POST",
+          redirect: "error",
+          headers: {
+            authorization: `Bearer ${apiKey}`,
+            "content-type": "application/json",
+            accept: "application/json",
+            "user-agent": "dsh-web-search-bocha/0.2.0"
+          },
+          body: JSON.stringify(body),
+          signal: timeout.signal
+        });
       } catch (error) {
-        if (signal?.aborted || isAbortError(error)) throw webFailure("Bocha search aborted", "WEB_ABORTED", error);
+        throwRequestFailure("Bocha search request failed", error, signal, timeout);
       }
-      throw webFailure(String(detail), "WEB_PROVIDER_ERROR");
+
+      if (!response.ok) {
+        let detail = `Bocha API error (HTTP ${response.status})`;
+        try {
+          const errorBody = await response.json();
+          detail = errorBody?.msg ?? errorBody?.message ?? errorBody?.error?.message ?? detail;
+        } catch (error) {
+          if (signal?.aborted || isAbortError(error) || timeout.didTimeout()) {
+            throwRequestFailure("Bocha search response failed", error, signal, timeout);
+          }
+        }
+        throw webFailure(String(detail), "WEB_PROVIDER_ERROR");
+      }
+
+      let parsed;
+      try {
+        parsed = await response.json();
+      } catch (error) {
+        throwRequestFailure("Bocha returned an unprocessable response body", error, signal, timeout);
+      }
+      return mapBochaResponse(parsed, maxResults);
+    } finally {
+      timeout.dispose();
     }
-    let parsed;
-    try {
-      parsed = await response.json();
-    } catch (error) {
-      if (signal?.aborted || isAbortError(error)) throw webFailure("Bocha search aborted", "WEB_ABORTED", error);
-      throw webFailure(`Bocha returned an unprocessable response body: ${String(error)}`, "WEB_PROVIDER_ERROR", error);
-    }
-    return mapBochaResponse(parsed, maxResults);
   }
 
   async resolveApiKey(options, signal) {

@@ -111,7 +111,38 @@ async function run() {
     globalThis.fetch = originalFetch;
   }
 
-  console.log("provider static checks: OK");
+  const indexSource = fs.readFileSync(path.resolve(__dirname, "..", "src", "index.js"), "utf8");
+  const applySource = indexSource.match(/export function apply\(ctx, config\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(applySource, "Bocha host plugin must export apply(ctx, config)");
+  const apply = new Function("BochaSearchProvider", "resolveBochaOptions", `return (${applySource.replace(/^export\s+/, "")})`)(BochaSearchProvider, resolveBochaOptions);
+  const [{ Context }, { default: WebRuntime }] = await Promise.all([
+    import("@deepseek-ai/cordis"),
+    import("@deepseek-ai/dsh-web")
+  ]);
+  const config = {
+    apiKey: { get: () => undefined },
+    apiKeyEnv: { get: () => "BOCHA_API_KEY" },
+    baseURL: { get: () => "https://api.bochaai.com/v1/web-search" },
+    freshness: { get: () => "noLimit" },
+    count: { get: () => 10 },
+    timeoutMs: { get: () => 15000 }
+  };
+  const ctx = new Context();
+  await ctx.plugin(WebRuntime, { searchProvider: "bocha" });
+  const plugin = () => ({ name: "web-search-bocha-reload-test", inject: ["web"], apply });
+  const firstFiber = await ctx.plugin(plugin(), config);
+  const firstProvider = ctx.web.searchProviders.get("bocha");
+  assert.equal(firstProvider.id, "bocha");
+  await firstFiber.dispose();
+  assert.equal(ctx.web.searchProviders.has("bocha"), false);
+
+  const reloadFiber = await ctx.plugin(plugin(), config);
+  assert.equal(ctx.web.searchProviders.has("bocha"), true);
+  assert.notEqual(ctx.web.searchProviders.get("bocha"), firstProvider);
+  await reloadFiber.dispose();
+  assert.equal(ctx.web.searchProviders.has("bocha"), false);
+
+  console.log("provider static and reload checks: OK");
 }
 
 run().catch((error) => {

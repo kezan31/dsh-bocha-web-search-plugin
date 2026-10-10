@@ -34,7 +34,7 @@ export const Config = z.object({
 });
 
 export function apply(ctx, config) {
-  ctx.web.registerSearchProvider(new BochaSearchProvider(() => resolveBochaOptions(ctx, {
+  return ctx.web.registerSearchProvider(new BochaSearchProvider(() => resolveBochaOptions(ctx, {
     apiKey: config.apiKey.get(),
     apiKeyEnv: config.apiKeyEnv.get(),
     baseURL: config.baseURL.get(),

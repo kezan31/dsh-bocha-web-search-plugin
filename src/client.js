@@ -1,6 +1,6 @@
 import React from "react";
 
-const PACKAGE_NAME = "dsh-web-search-bocha";
+const PACKAGE_NAME = "dsh-bocha-web-search-plugin";
 const BUNDLE_CONFIG_KEY = PACKAGE_NAME;
 const LOCALE_NAMESPACE = "webSearchBocha";
 const DEFAULT_API_KEY_REF = "BOCHA_API_KEY";
@@ -467,18 +467,18 @@ export function apply(ctx) {
   if (slots === undefined || locale === undefined || remote === undefined || configForms === undefined) return;
 
   const bochaForm = configForms.get("web-search-bocha");
-  ctx.effect(() => locale.register(LOCALE_NAMESPACE, { en, zh }), "dsh-web-search-bocha: locale");
+  ctx.effect(() => locale.register(LOCALE_NAMESPACE, { en, zh }), "dsh-bocha-web-search-plugin: locale");
   ctx.effect(() => slots.inject("plugins.bundle.config", () => slots.register({
     name: "plugins.bundle.config",
     key: BUNDLE_CONFIG_KEY,
     locale: LOCALE_NAMESPACE,
     inject: () => ({ remote, form: bochaForm })
-  }, BochaConfig)), "dsh-web-search-bocha: bundle configuration");
+  }, BochaConfig)), "dsh-bocha-web-search-plugin: bundle configuration");
   ctx.effect(() => configForms.whileServed(["web-search-bocha"], () => slots.inject("settings.general.item", () => slots.register({
     name: "settings.general.item",
     id: "web-search-engine",
     order: 5,
     locale: LOCALE_NAMESPACE,
     inject: () => ({ form: bochaForm })
-  }, SearchEngineRow))), "dsh-web-search-bocha: general search engine setting");
+  }, SearchEngineRow))), "dsh-bocha-web-search-plugin: general search engine setting");
 }

@@ -9,7 +9,7 @@
     searchProvider: bocha
 
 - id: web-search-bocha
-  name: 'dsh-web-search-bocha'
+  name: 'dsh-bocha-web-search-plugin'
   config:
     searchEngine: bocha
     apiKeyEnv: BOCHA_API_KEY

@@ -86,7 +86,7 @@ async function run() {
     assert.equal(requestUrl, "https://api.bochaai.com/v1/web-search");
     assert.equal(requestOptions.method, "POST");
     assert.equal(requestOptions.headers.authorization, "Bearer test-key");
-    assert.equal(requestOptions.headers["user-agent"], "dsh-web-search-bocha/0.2.2");
+    assert.equal(requestOptions.headers["user-agent"], "dsh-bocha-web-search-plugin/0.2.2");
     assert.equal(JSON.parse(requestOptions.body).query, "dsh");
     assert.equal(JSON.parse(requestOptions.body).count, 1);
     assert.equal(result.sources.length, 1);

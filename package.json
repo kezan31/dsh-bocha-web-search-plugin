@@ -1,5 +1,5 @@
 {
-  "name": "dsh-web-search-bocha",
+  "name": "dsh-bocha-web-search-plugin",
   "version": "0.2.2",
   "description": "Production Bocha Web Search provider and settings UI for DeepSeek Harness.",
   "type": "module",
@@ -18,6 +18,9 @@
     "scripts/build-client.mjs",
     "locale/*.json",
     "README.md",
+    "README.en.md",
+    "docs/**/*.jpg",
+    "docs/**/*.jpeg",
     "composition.example.yml",
     "fixtures/**/*.json",
     "test/**/*.cjs",

@@ -2,6 +2,22 @@
   "name": "dsh-bocha-web-search-plugin",
   "version": "0.2.2",
   "description": "Production Bocha Web Search provider and settings UI for DeepSeek Harness.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kezan31/dsh-bocha-web-search-plugin.git"
+  },
+  "homepage": "https://github.com/kezan31/dsh-bocha-web-search-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/kezan31/dsh-bocha-web-search-plugin/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "bocha",
+    "web-search",
+    "plugin"
+  ],
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -55,6 +71,7 @@
     "build": "node scripts/build-client.mjs",
     "check": "node --check src/provider.js && node --check src/index.js && node --check src/client.js && node --check scripts/build-client.mjs && node --check lib/provider.js && node --check lib/index.js && node --check lib/client.js",
     "test:provider": "node test/provider-static.cjs",
-    "test": "npm run build && npm run check && npm run test:provider"
+    "test": "npm run build && npm run check && npm run test:provider",
+    "prepublishOnly": "npm test"
   }
 }

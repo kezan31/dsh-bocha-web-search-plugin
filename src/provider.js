@@ -172,7 +172,7 @@ export class BochaSearchProvider {
             authorization: `Bearer ${apiKey}`,
             "content-type": "application/json",
             accept: "application/json",
-            "user-agent": "dsh-web-search-bocha/0.2.0"
+            "user-agent": "dsh-web-search-bocha/0.2.2"
           },
           body: JSON.stringify(body),
           signal: timeout.signal

@@ -1,8 +1,7 @@
 import React from "react";
 
 const PACKAGE_NAME = "dsh-web-search-bocha";
-const ROW_ID = "web-search-bocha";
-const CONFIG_KEY = `${PACKAGE_NAME}#${ROW_ID}`;
+const BUNDLE_CONFIG_KEY = PACKAGE_NAME;
 const LOCALE_NAMESPACE = "webSearchBocha";
 const DEFAULT_API_KEY_REF = "BOCHA_API_KEY";
 const DEFAULT_BASE_URL = "https://api.bochaai.com/v1/web-search";
@@ -32,7 +31,13 @@ const CSS = `
 .bocha-button:disabled{opacity:.55;cursor:default}
 .bocha-button-primary{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-base)}
 .bocha-button-primary:hover:not(:disabled){filter:brightness(.96)}
-@media(max-width:520px){.bocha-card{padding:12px}.bocha-actions{flex-wrap:wrap}}
+.bocha-engine-settings{color:var(--dsw-alias-label-primary)}
+.bocha-engine-settings .bocha-card-title{font-size:14px;font-weight:400;line-height:20px}
+.bocha-engine-settings .bocha-card-description{font-size:12px;line-height:18px;margin:4px 0 0}
+.bocha-engine-row{border-bottom:.5px solid var(--dsw-alias-border-l2);display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 0}
+.bocha-engine-copy{min-width:0}
+.bocha-engine-select{min-width:160px}
+@media(max-width:520px){.bocha-card{padding:12px}.bocha-actions{flex-wrap:wrap}.bocha-engine-row{align-items:stretch;flex-direction:column}.bocha-engine-select{width:100%}}
 `;
 
 const en = {
@@ -66,7 +71,14 @@ const en = {
   invalidFreshness: "Enter a supported freshness value.",
   invalidCount: "Maximum results must be an integer from 1 to 50.",
   invalidTimeout: "Timeout must be an integer from 1000 to 60000 ms.",
-  summary: "Bocha web search provider settings."
+  summary: "Configure the Bocha API key and search options directly on this bundle's page.",
+  searchEngineTitle: "Search engine",
+  searchEngineDescription: "Choose which backend the web_search tool uses. Your choice is saved to this profile and used for later searches.",
+  searchEngineLabel: "Search engine",
+  bochaEngine: "Bocha",
+  deepseekEngine: "DeepSeek",
+  engineSaved: "Search engine saved.",
+  engineSaveFailed: "DSH did not accept the search engine change."
 };
 
 const zh = {
@@ -100,7 +112,14 @@ const zh = {
   invalidFreshness: "请输入支持的时间范围。",
   invalidCount: "结果数必须是 1 到 50 之间的整数。",
   invalidTimeout: "超时时间必须是 1000 到 60000 毫秒之间的整数。",
-  summary: "博查网页搜索提供方设置。"
+  summary: "可在此组合包页面直接配置博查 API Key 和搜索参数。",
+  searchEngineTitle: "搜索引擎",
+  searchEngineDescription: "选择 web_search 使用的后端；该选择将保存到当前配置文件，并用于后续搜索。",
+  searchEngineLabel: "搜索引擎",
+  bochaEngine: "博查",
+  deepseekEngine: "DeepSeek",
+  engineSaved: "搜索引擎已保存。",
+  engineSaveFailed: "DSH 未接受搜索引擎修改。"
 };
 
 function fieldValue(state, field, fallback) {
@@ -146,7 +165,13 @@ function validFreshness(value) {
 
 function BochaConfig({ view, form, remote, t }) {
   const h = React.createElement;
-  const state = form?.state;
+  const subscribe = React.useCallback((listener) => (
+    typeof form?.subscribe === "function" ? form.subscribe(listener) : () => {}
+  ), [form]);
+  const getSnapshot = React.useCallback(() => (
+    typeof form?.getSnapshot === "function" ? form.getSnapshot() : form?.state
+  ), [form]);
+  const state = React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const revision = state?.revision;
   const [draft, setDraft] = React.useState(() => draftFrom(state));
   const [apiKey, setApiKey] = React.useState("");
@@ -369,19 +394,91 @@ function BochaConfig({ view, form, remote, t }) {
   ));
 }
 
-export const inject = ["slots", "locale", "remote", "remote.credentials"];
+function SearchEngineRow({ form, t }) {
+  const h = React.createElement;
+  const [snapshot, setSnapshot] = React.useState(() => form.getSnapshot());
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [message, setMessage] = React.useState("");
+
+  React.useEffect(() => {
+    const sync = () => setSnapshot(form.getSnapshot());
+    sync();
+    return form.subscribe(sync);
+  }, [form]);
+
+  const rawEngine = snapshot?.value?.searchEngine ?? snapshot?.base?.searchEngine ?? "bocha";
+  const selectedEngine = rawEngine === "deepseek-official" ? "deepseek-official" : "bocha";
+  const writable = snapshot?.status === "ready" && snapshot.writable;
+  const disabled = !writable || saving;
+
+  async function changeEngine(event) {
+    const next = event.currentTarget.value;
+    if ((next !== "bocha" && next !== "deepseek-official") || next === selectedEngine) return;
+    setError("");
+    setMessage("");
+    setSaving(true);
+    try {
+      const accepted = await form.set("searchEngine", next);
+      if (!accepted) throw new Error(t("engineSaveFailed"));
+      setMessage(t("engineSaved"));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return h(React.Fragment, null,
+    h("style", { "data-dsh-plugin": PACKAGE_NAME }, CSS),
+    h("section", { className: "bocha-engine-settings", "aria-labelledby": "bocha-search-engine-title" },
+      h("div", { className: "bocha-engine-row" },
+        h("div", { className: "bocha-engine-copy" },
+          h("h3", { id: "bocha-search-engine-title", className: "bocha-card-title" }, t("searchEngineTitle")),
+          h("p", { className: "bocha-card-description" }, t("searchEngineDescription"))
+        ),
+        h("label", { className: "bocha-field", htmlFor: "bocha-search-engine" },
+          h("span", { className: "bocha-label" }, t("searchEngineLabel")),
+          h("select", {
+            id: "bocha-search-engine",
+            className: "bocha-input bocha-engine-select",
+            value: selectedEngine,
+            disabled,
+            onChange: changeEngine
+          },
+          h("option", { value: "bocha" }, t("bochaEngine")),
+          h("option", { value: "deepseek-official" }, t("deepseekEngine")))
+        )
+      ),
+      !writable ? h("p", { className: "bocha-hint" }, snapshot?.status === "loading" ? t("loading") : t("settingsReadOnly")) : null,
+      error ? h("p", { className: "bocha-status bocha-status-error", role: "alert" }, error) : null,
+      message ? h("p", { className: "bocha-status bocha-status-success", role: "status" }, message) : null
+    )
+  );
+}
+
+export const inject = ["slots", "locale", "remote", "remote.credentials", "configForms"];
 
 export function apply(ctx) {
   const slots = ctx.slots;
   const locale = ctx.locale;
   const remote = ctx.remote;
-  if (slots === undefined || locale === undefined || remote === undefined) return;
+  const configForms = ctx.configForms;
+  if (slots === undefined || locale === undefined || remote === undefined || configForms === undefined) return;
 
+  const bochaForm = configForms.get("web-search-bocha");
   ctx.effect(() => locale.register(LOCALE_NAMESPACE, { en, zh }), "dsh-web-search-bocha: locale");
-  ctx.effect(() => slots.inject("plugins.row.config", () => slots.register({
-    name: "plugins.row.config",
-    key: CONFIG_KEY,
+  ctx.effect(() => slots.inject("plugins.bundle.config", () => slots.register({
+    name: "plugins.bundle.config",
+    key: BUNDLE_CONFIG_KEY,
     locale: LOCALE_NAMESPACE,
-    inject: () => ({ remote })
-  }, BochaConfig)), "dsh-web-search-bocha: plugin configuration");
+    inject: () => ({ remote, form: bochaForm })
+  }, BochaConfig)), "dsh-web-search-bocha: bundle configuration");
+  ctx.effect(() => configForms.whileServed(["web-search-bocha"], () => slots.inject("settings.general.item", () => slots.register({
+    name: "settings.general.item",
+    id: "web-search-engine",
+    order: 5,
+    locale: LOCALE_NAMESPACE,
+    inject: () => ({ form: bochaForm })
+  }, SearchEngineRow))), "dsh-web-search-bocha: general search engine setting");
 }

@@ -1,15 +1,14 @@
-# Production bundle patch: replace DeepSeek search selection with Bocha.
+# Keep the DSH DeepSeek provider active while the Bocha plugin owns the fixed
+# web-seam id and routes each search using its live General Settings choice.
 - id: web
   config:
     searchProvider: bocha
-
-- id: web-search-deepseek
-  disabled: true
 
 - insert:
     - id: web-search-bocha
       name: dsh-web-search-bocha
       config:
+        searchEngine: bocha
         apiKeyEnv: BOCHA_API_KEY
         baseURL: https://api.bochaai.com/v1/web-search
         freshness: noLimit

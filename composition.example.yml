@@ -1,6 +1,7 @@
 # Production composition example.
 # Apply this in a copied/local composition, not by editing the shipped install.
-# Replace the shipped DeepSeek web provider row when selecting Bocha.
+# Keep the shipped DeepSeek provider active; the Bocha plugin's router
+# dynamically forwards each web.search call to the selected engine.
 
 - id: web
   name: '@deepseek-ai/dsh-web'
@@ -10,6 +11,7 @@
 - id: web-search-bocha
   name: 'dsh-web-search-bocha'
   config:
+    searchEngine: bocha
     apiKeyEnv: BOCHA_API_KEY
     baseURL: https://api.bochaai.com/v1/web-search
     freshness: noLimit

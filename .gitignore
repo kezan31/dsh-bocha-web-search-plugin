@@ -1,6 +1,27 @@
+# Dependencies and local DSH state
 node_modules/
+.pnpm-store/
+.dsh-dev-home/
+.npm/
 
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+
+# Generated test and package artifacts
+coverage/
+.nyc_output/
+*.tgz
+
+# Logs, OS files, and editor backups
 npm-debug.log*
 *.log
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+*~
+
+# Local session handoff
+/NEXT_SESSION_HANDOFF.md

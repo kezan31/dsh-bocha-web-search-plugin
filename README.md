@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-这是一个面向 DeepSeek Harness（DSH）的 Cordis bundle，为 DSH 的 `ctx.web` 提供网页搜索。当前版本为 **0.2.2**，面向 DSH `0.2.0-rc.2` 和 Cordis `~4.0.4`。
+这是一个面向 DeepSeek Harness（DSH）的 Cordis bundle，为 DSH 的 `ctx.web` 提供网页搜索。当前版本为 **0.2.3**，面向 DSH `0.2.0-rc.2` 和 `0.2.2-rc.5`，Cordis `~4.0.4` / `~4.1.0`。
 
 ## 功能
 
@@ -15,7 +15,7 @@
 
 ## 安装与首次使用
 
-本插件是 DSH bundle（目标版本：DSH `0.2.0-rc.2`、Cordis `~4.0.4`）；请先安装 DSH CLI。包发布到 npm 后，在终端中安装到要运行 DSH 的 Profile：
+本插件是 DSH bundle（目标版本：DSH `0.2.0-rc.2`、`0.2.2-rc.5`；Cordis `~4.0.4` / `~4.1.0`）；请先安装 DSH CLI。包发布到 npm 后，在终端中安装到要运行 DSH 的 Profile：
 
 ```sh
 dsh plugin --profile my-profile add dsh-bocha-web-search-plugin

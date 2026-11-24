@@ -86,7 +86,7 @@ async function run() {
     assert.equal(requestUrl, "https://api.bochaai.com/v1/web-search");
     assert.equal(requestOptions.method, "POST");
     assert.equal(requestOptions.headers.authorization, "Bearer test-key");
-    assert.equal(requestOptions.headers["user-agent"], "dsh-bocha-web-search-plugin/0.2.2");
+    assert.equal(requestOptions.headers["user-agent"], "dsh-bocha-web-search-plugin/0.2.3");
     assert.equal(JSON.parse(requestOptions.body).query, "dsh");
     assert.equal(JSON.parse(requestOptions.body).count, 1);
     assert.equal(result.sources.length, 1);
@@ -254,7 +254,7 @@ async function run() {
   assert.ok(patchSource.includes("searchEngine: bocha"));
   assert.ok(!patchSource.includes("disabled: true"), "the bundle must not disable the DeepSeek provider");
   const packageManifest = JSON.parse(fs.readFileSync(path.resolve(__dirname, "..", "package.json"), "utf8"));
-  assert.equal(packageManifest.peerDependencies["@deepseek-ai/dsh-web-search-deepseek"], "0.2.0-rc.2");
+  assert.equal(packageManifest.peerDependencies["@deepseek-ai/dsh-web-search-deepseek"], "0.2.0-rc.2 || 0.2.2-rc.5");
 
   console.log("provider static and live engine routing checks: OK");
 }

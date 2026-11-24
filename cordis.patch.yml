@@ -3,6 +3,7 @@
 - id: web
   config:
     searchProvider: bocha
+    fetchProvider: http
 
 - insert:
     - id: web-search-bocha

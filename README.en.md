@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-A Cordis bundle that provides web search through DeepSeek Harness (DSH)'s `ctx.web` capability. This is version **0.2.2**, targeting DSH `0.2.0-rc.2` and Cordis `~4.0.4`.
+A Cordis bundle that provides web search through DeepSeek Harness (DSH)'s `ctx.web` capability. This is version **0.2.3**, targeting DSH `0.2.0-rc.2` and `0.2.2-rc.5` with Cordis `~4.0.4` / `~4.1.0`.
 
 ## Features
 
@@ -15,7 +15,7 @@ A Cordis bundle that provides web search through DeepSeek Harness (DSH)'s `ctx.w
 
 ## Install and first use
 
-This is a DSH bundle targeting DSH `0.2.0-rc.2` and Cordis `~4.0.4`. Install the DSH CLI first. After the package is published to npm, install it into the Profile that will run DSH:
+This is a DSH bundle targeting DSH `0.2.0-rc.2` and `0.2.2-rc.5` with Cordis `~4.0.4` / `~4.1.0`. Install the DSH CLI first. After the package is published to npm, install it into the Profile that will run DSH:
 
 ```sh
 dsh plugin --profile my-profile add dsh-bocha-web-search-plugin
